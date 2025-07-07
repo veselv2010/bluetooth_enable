@@ -16,7 +16,6 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
-import io.flutter.plugin.common.PluginRegistry.Registrar;
 import io.flutter.plugin.common.PluginRegistry.RequestPermissionsResultListener;
 import io.flutter.plugin.common.PluginRegistry.ActivityResultListener;
 import io.flutter.plugin.common.PluginRegistry;
@@ -24,7 +23,6 @@ import io.flutter.plugin.common.PluginRegistry;
 /** FlutterBluePlugin */
 public class BluetoothEnablePlugin implements FlutterPlugin, ActivityAware, MethodCallHandler, ActivityResultListener, PluginRegistry.RequestPermissionsResultListener {
     private static final String TAG = "BluetoothEnablePlugin";
-    private Registrar registrar;
     private Activity activity;
     private MethodChannel channel;
     private BluetoothManager mBluetoothManager;
@@ -34,24 +32,8 @@ public class BluetoothEnablePlugin implements FlutterPlugin, ActivityAware, Meth
     private static final int REQUEST_ENABLE_BLUETOOTH = 1;
     private static final int REQUEST_CODE_SCAN_ACTIVITY = 2777;
 
-    /** Plugin registration. */
-    public static void registerWith(Registrar registrar) {
-        final BluetoothEnablePlugin instance = new BluetoothEnablePlugin(registrar);
-        registrar.addActivityResultListener(instance);
-        registrar.addRequestPermissionsResultListener(instance);
-    }
-
-    BluetoothEnablePlugin(Registrar r){
-        this.registrar = r;
-        this.activity = r.activity();
-        this.channel = new MethodChannel(registrar.messenger(), "bluetooth_enable");
-        this.mBluetoothManager = (BluetoothManager) r.activity().getSystemService(Context.BLUETOOTH_SERVICE);
-        this.mBluetoothAdapter = mBluetoothManager.getAdapter();
-        channel.setMethodCallHandler(this);
-    }
-
-    public BluetoothEnablePlugin(){
-        this.onDetachedFromEngine(null);
+    public BluetoothEnablePlugin() {
+        // Default constructor required by Flutter
     }
 
 
@@ -154,11 +136,14 @@ public class BluetoothEnablePlugin implements FlutterPlugin, ActivityAware, Meth
     @Override
     public void onAttachedToEngine(FlutterPluginBinding binding) {
         this.channel = new MethodChannel(binding.getBinaryMessenger(), "bluetooth_enable");
+        this.channel.setMethodCallHandler(this);
     }
 
     @Override
     public void onDetachedFromEngine(FlutterPluginBinding binding) {
-        this.registrar = null;
+        if (channel != null) {
+            channel.setMethodCallHandler(null);
+        }
         this.activity = null;
         this.channel = null;
         this.mBluetoothAdapter = null;
@@ -196,6 +181,9 @@ public class BluetoothEnablePlugin implements FlutterPlugin, ActivityAware, Meth
         this.releaseResources();
     }
     private void releaseResources() {
-        this.activity.finish();
+        // Just clean up resources without finishing the activity
+        this.activity = null;
+        this.mBluetoothAdapter = null;
+        this.mBluetoothManager = null;
     }
 }
